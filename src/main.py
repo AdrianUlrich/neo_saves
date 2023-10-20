@@ -8,21 +8,25 @@ import PySimpleGUI as sg
 
 import config_utils
 
+MILLISECONDS_PER_SECOND = 1000
+
 SAVE_NAME = 'Save Name'
 
 SAVES_LOCATION_TEXT = 'Location'
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
 
     if not os.path.isfile('config.ini'):
         config_utils.initialize()
 
     res = config_utils.config.read('config.ini')
+    log_level = config_utils.config.getint('main', 'Logging Level')
+    logging.basicConfig(level=log_level)
     logging.info(f'Config file: "{res and res[0]}" read')
 
     path = config_utils.config.get("main", config_utils.SAVEFILE_PATH_C)
+    savename_prefix = generate_savename_prefix()
     layout = [
         [
             sg.Text(
@@ -39,15 +43,15 @@ def main():
             sg.HorizontalSeparator(),
         ],
         [
-            sg.In(default_text=(datetime.datetime.now().strftime('%d-%m-%y_%H:%M_')), key=SAVE_NAME),
+            sg.In(default_text=savename_prefix, key=SAVE_NAME),
             sg.Button("Save"),
             sg.Button("Load from file"),
         ]
     ]
-    window = sg.Window('NEOSaver', layout)
+    window = sg.Window('NEOSaver', layout, return_keyboard_events=True)
 
     while True:
-        event, values = window.read()
+        event, values = window.read(60 * MILLISECONDS_PER_SECOND)
 
         if event == sg.WIN_CLOSED:
             break
@@ -82,8 +86,21 @@ def main():
                 continue
             # replace savefile
             # relaunch NS
+        elif event == sg.TIMEOUT_EVENT:
+            full_savename: str = values[SAVE_NAME]
+            if full_savename.startswith(savename_prefix):
+                savename = full_savename.removeprefix(savename_prefix)
+                new_prefix = generate_savename_prefix()
+                window[SAVE_NAME].update(new_prefix + savename)
+                logging.debug(f'Updated prefix of {full_savename} to {new_prefix}')
+        elif event == 'Escape:27':
+            window.hide()
 
     window.close()
+
+
+def generate_savename_prefix():
+    return datetime.datetime.now().strftime('%d-%m-%y_%H:%M_')
 
 
 def ask_for_path(

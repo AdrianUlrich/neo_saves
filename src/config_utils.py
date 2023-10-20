@@ -9,6 +9,7 @@ config = SafeConfigParser()
 def initialize():
     config.add_section('main')
     config.set('main', SAVEFILE_PATH_C, '')
+    config.set('main', 'Logging Level', str(logging.WARNING))
 
     with open('config.ini', 'x') as configfile:
         config.write(configfile)
