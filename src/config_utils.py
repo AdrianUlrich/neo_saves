@@ -2,6 +2,7 @@ import logging
 from configparser import SafeConfigParser
 
 SAVEFILE_PATH_C = 'NEO.exe folder'
+GAMEFILE_PATH_C = 'GAMEFILE_PATH'
 
 config = SafeConfigParser()
 
